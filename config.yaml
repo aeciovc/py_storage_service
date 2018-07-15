@@ -1,0 +1,2 @@
+AMQP_URI: amqp://rabbitmq:rabbitmq@localhost
+WEB_SERVER_ADDRESS: 0.0.0.0:8888
