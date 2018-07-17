@@ -1,0 +1,7 @@
+# Packages
+bin
+var
+
+#Logs
+info.log
+errors.log

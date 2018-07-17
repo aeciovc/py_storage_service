@@ -6,6 +6,9 @@ from controller import StorageController
 
 import json
 
+#Intern Modules
+from logger import default
+
 class StorageService:
     name = config('SERVICE_NAME')
 

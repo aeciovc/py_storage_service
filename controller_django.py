@@ -1,3 +1,4 @@
+'''
 from .models import StorageConfig
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -32,3 +33,4 @@ class StorageController(object):
         print("[Storage] Reading from: ", default_storage)
         image_data = default_storage.open(path).read()
         return image_data
+'''
