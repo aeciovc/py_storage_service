@@ -1,4 +1,7 @@
 
+from logging import info, error
+from os import path
+
 import uuid
 import io
 
@@ -20,24 +23,39 @@ class StorageController(object):
         #Generate id object
         uuid_name = str(uuid.uuid4())
 
-        print ("[Storage] Saving file: "+uuid_name)
+        #Path
+        file_path = path.join(self.config.location, uuid_name)
+        info("[Storage] Saving file: "+file_path)
 
         #Saving File
-        f = io.open(self.config.location+"/"+uuid_name,'wb')
-        f.write(raw_file)
-        f.close()
+        try:
+            f = io.open(file_path, 'wb')
+            f.write(raw_file)
+            f.close()
+        except Exception as e:
+            error("[Storage] Error trying read file"+ e.msg)
+            return None
 
-        print ("[Storage] Saved")
+        info("[Storage] Saved")
 
         return uuid_name
 
     def read(self, uuid_name):
 
-        if uuid_name:
-            path = self.config.location+"/"+uuid_name
+        if not uuid_name:
+            return None
+            
+        file_path = path.join(self.config.location, uuid_name)
 
-            print("[Storage] Reading from: ", self.config.location+"/"+uuid_name)
-            f = io.open(path, 'rb').read()
-            return f
+        if path.isfile(file_path):
+            info("[Storage] Reading from: "+ file_path)
+            
+            try:
+                f = io.open(file_path, 'rb').read()
+                return f
+            except Exception as e:
+                error("[Storage] Error trying read file"+ e.msg)
+                return None
         else:
+            error("[Storage] File not found: "+ file_path)
             return None

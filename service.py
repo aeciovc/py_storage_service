@@ -29,9 +29,12 @@ class StorageService:
         #Reading file
         file_bytes = StorageController(storage_config).get(uuid)
         
-        #Build object
-        f = File(file_bytes)
-        return f.encode().as_json()
+        if file_bytes is not None:
+            #Build object
+            f = File(file_bytes)
+            return f.encode().as_json()
+        else:
+            return None
 
     @rpc
     def save(self, file):
