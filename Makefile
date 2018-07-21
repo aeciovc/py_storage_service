@@ -1,2 +1,2 @@
 start:
-	nameko run --config config.yaml service;
+	nameko run --config nameko.yaml service;
