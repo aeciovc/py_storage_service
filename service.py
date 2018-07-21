@@ -15,6 +15,9 @@ class StorageService:
     #Configs
     LOCAL_STORAGE_LOCATION = config('LOCAL_STORAGE_LOCATION')
 
+    #Config Search
+    storage_config = StorageConfig(LOCAL_STORAGE_LOCATION)
+
     #RPC methods
     @rpc
     def ping(self):
@@ -23,11 +26,8 @@ class StorageService:
     @rpc
     def get(self, uuid):
 
-        #Config Search
-        storage_config = StorageConfig(self.LOCAL_STORAGE_LOCATION)
-
         #Reading file
-        file_bytes = StorageController(storage_config).get(uuid)
+        file_bytes = StorageController(self.storage_config).get(uuid)
         
         if file_bytes is not None:
             #Build object
@@ -43,9 +43,14 @@ class StorageService:
 
         f = File(json_file["content"])
         
-        #Config Search
-        storage_config = StorageConfig(self.LOCAL_STORAGE_LOCATION)
-
         #Save File
-        uuid_name = StorageController(storage_config).save(f.decode())
+        uuid_name = StorageController(self.storage_config).save(f.decode())
         return uuid_name
+
+    @rpc
+    def remove(self, uuid_name):
+
+        #Remove file
+        StorageController(self.storage_config).remove(uuid_name)
+
+        return True

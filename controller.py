@@ -4,6 +4,7 @@ from os import path
 
 import uuid
 import io
+import os
 
 class StorageController(object):
     
@@ -39,6 +40,23 @@ class StorageController(object):
         info("[Storage] Saved")
 
         return uuid_name
+
+    def remove(self, uuid_name):
+
+        #Path
+        file_path = path.join(self.config.location, uuid_name)
+        info("[Storage] Removing file: "+file_path)
+
+        #Removing File
+        try:
+            os.remove(file_path)
+        except Exception as e:
+            error("[Storage] Error trying remove file"+ e.msg)
+            return False
+
+        info("[Storage] Removed")
+
+        return True
 
     def read(self, uuid_name):
 
