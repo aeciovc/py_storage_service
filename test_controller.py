@@ -1,8 +1,8 @@
 import unittest
 
 from controller import StorageController
-import models
-import errors
+from models import StorageConfig
+from errors import InvalidConfigError, InvalidParamError
 
 import uuid
 
@@ -12,22 +12,31 @@ class TestGet(unittest.TestCase):
     """
 
     #Config Search
-    storage_config = None
-    invalid_storage_config = None
+    storage_config = StorageConfig("/home/user")
+    storage_config_invalid = None
 
     def test_remove_with_invalid_config(self):
 
-        storage = StorageController(self.invalid_storage_config)
+        storage = StorageController(self.storage_config_invalid)
 
-        with self.assertRaises(errors.InvalidConfigError):
+        with self.assertRaises(InvalidConfigError):
             storage.remove(uuid.uuid4())
 
-    '''
-    def test_remove_with_integer(self):
+    def test_remove_with_invalid_inputs(self):
         
-        result = StorageController(self.storage_config).remove(1)
-        self.assertEqual(result, 0)
-    '''
+        storage = StorageController(self.storage_config)
 
+        with self.subTest("with integer"):
+            with self.assertRaises(InvalidParamError):
+                storage.remove(1)
+
+        with self.subTest("with string"):
+            with self.assertRaises(InvalidParamError):
+                storage.remove("fegwegweg")
+        
+        with self.subTest("with None"):
+            with self.assertRaises(InvalidParamError):
+                storage.remove(None)
+        
 if __name__ == '__main__':
     unittest.main()
