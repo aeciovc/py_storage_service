@@ -18,7 +18,7 @@ class StorageService:
     #Configs
     LOCAL_STORAGE_LOCATION = config('LOCAL_STORAGE_LOCATION')
 
-    #Config Search
+    #Config Storage
     storage_config = StorageConfig(LOCAL_STORAGE_LOCATION)
 
     #RPC methods

@@ -1,17 +1,24 @@
 import unittest
+import unittest.mock
+
+from unittest.mock import patch
+
+import uuid
 
 from controller import StorageController
 from models import StorageConfig
 from errors import InvalidConfigError, InvalidParamError
 
-import uuid
+#Intern Modules
+from logger import default
+from logging import debug
 
-class TestGet(unittest.TestCase):
+class TestRemove(unittest.TestCase):
     """
-    Test functions from the controller
+    Test remove function from the controller
     """
 
-    #Config Search
+    #Config
     storage_config = StorageConfig("/home/user")
     storage_config_invalid = None
 
@@ -37,6 +44,13 @@ class TestGet(unittest.TestCase):
         with self.subTest("with None"):
             with self.assertRaises(InvalidParamError):
                 storage.remove(None)
+
+    @patch('controller.StorageController.remove', return_value=False)
+    def test_remove_no_file_found(self, remove):
+
+        storage = StorageController(self.storage_config)
+
+        self.assertEqual(storage.remove(uuid.uuid4()), False)
         
 if __name__ == '__main__':
     unittest.main()
