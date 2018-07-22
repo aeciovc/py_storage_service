@@ -21,7 +21,7 @@ class TestGet(unittest.TestCase):
 
         with self.assertRaises(InvalidConfigError):
             storage.remove(uuid.uuid4())
-
+        
     def test_remove_with_invalid_inputs(self):
         
         storage = StorageController(self.storage_config)

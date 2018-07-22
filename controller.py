@@ -88,14 +88,20 @@ class StorageController(object):
             return None
 
     def _is_valid_config(self):
-        if hasattr(self.config, 'location'):
-            return True
-        else:
+        if not hasattr(self.config, 'location'):
             return False
+        else:
+            return True
         
     def _is_valid_uuid(self, uuid_name):
         try:
             if UUID(str(uuid_name)).version:
                 return True
         except ValueError:
+            return False
+
+    def _is_path_exists(self):
+        if os.path.isdir(self.config.location):
+            return True
+        else:
             return False
