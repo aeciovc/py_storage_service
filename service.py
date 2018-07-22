@@ -3,11 +3,14 @@ from decouple import config
 
 from models import StorageConfig, File
 from controller import StorageController
+from errors import InvalidConfigError
 
 import json
 
 #Intern Modules
 from logger import default
+
+from logging import error
 
 class StorageService:
     name = config('SERVICE_NAME')
@@ -50,7 +53,10 @@ class StorageService:
     @rpc
     def remove(self, uuid_name):
 
-        #Remove file
-        StorageController(self.storage_config).remove(uuid_name)
+        try:
+            StorageController(self.storage_config).remove(uuid_name)
+        except InvalidConfigError as e:
+            error("[StorageService] Error: "+ e.msg)
+            return False
 
         return True

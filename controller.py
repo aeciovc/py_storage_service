@@ -1,10 +1,11 @@
-
 from logging import info, error
 from os import path
 
 import uuid
 import io
 import os
+
+from errors import InvalidConfigError
 
 class StorageController(object):
     
@@ -14,7 +15,7 @@ class StorageController(object):
     def get(self, uuid):
         
         if uuid:
-            obj = self.read(uuid)
+            obj = self._read(uuid)
             return obj
         else:
             return {}
@@ -43,6 +44,9 @@ class StorageController(object):
 
     def remove(self, uuid_name):
 
+        if not self._is_valid_config():
+            raise InvalidConfigError()
+
         #Path
         file_path = path.join(self.config.location, uuid_name)
         info("[Storage] Removing file: "+file_path)
@@ -58,7 +62,8 @@ class StorageController(object):
 
         return True
 
-    def read(self, uuid_name):
+    #Private Functions
+    def _read(self, uuid_name):
 
         if not uuid_name:
             return None
@@ -77,3 +82,9 @@ class StorageController(object):
         else:
             error("[Storage] File not found: "+ file_path)
             return None
+
+    def _is_valid_config(self):
+        if hasattr(self.config, 'location'):
+            return True
+        else:
+            return False
