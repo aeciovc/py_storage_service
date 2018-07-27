@@ -1,9 +1,12 @@
-
 from logging import info, error
 from os import path
+from uuid import UUID
 
 import uuid
 import io
+import os
+
+from errors import InvalidConfigError, InvalidParamError
 
 class StorageController(object):
     
@@ -13,7 +16,7 @@ class StorageController(object):
     def get(self, uuid):
         
         if uuid:
-            obj = self.read(uuid)
+            obj = self._read(uuid)
             return obj
         else:
             return {}
@@ -40,7 +43,31 @@ class StorageController(object):
 
         return uuid_name
 
-    def read(self, uuid_name):
+    def remove(self, uuid_name):
+
+        if not self._is_valid_config():
+            raise InvalidConfigError()
+
+        if not self._is_valid_uuid(uuid_name):
+            raise InvalidParamError("This is not a UUID value")
+
+        #Path
+        file_path = path.join(self.config.location, str(uuid_name))
+        info("[Storage] Removing file: "+file_path)
+
+        #Removing File
+        try:
+            os.remove(file_path)
+        except Exception as e:
+            error("[Storage] Error trying remove file {0}".format(e))
+            raise FileNotFoundError("File not found {0}".format(file_path))
+
+        info("[Storage] Removed")
+
+        return True
+
+    #Private Functions
+    def _read(self, uuid_name):
 
         if not uuid_name:
             return None
@@ -59,3 +86,22 @@ class StorageController(object):
         else:
             error("[Storage] File not found: "+ file_path)
             return None
+
+    def _is_valid_config(self):
+        if not hasattr(self.config, 'location'):
+            return False
+        else:
+            return True
+        
+    def _is_valid_uuid(self, uuid_name):
+        try:
+            if UUID(str(uuid_name)).version:
+                return True
+        except ValueError:
+            return False
+
+    def _is_path_exists(self):
+        if os.path.isdir(self.config.location):
+            return True
+        else:
+            return False

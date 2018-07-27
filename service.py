@@ -3,17 +3,23 @@ from decouple import config
 
 from models import StorageConfig, File
 from controller import StorageController
+from errors import InvalidConfigError
 
 import json
 
 #Intern Modules
 from logger import default
 
+from logging import error
+
 class StorageService:
     name = config('SERVICE_NAME')
 
     #Configs
     LOCAL_STORAGE_LOCATION = config('LOCAL_STORAGE_LOCATION')
+
+    #Config Storage
+    storage_config = StorageConfig(LOCAL_STORAGE_LOCATION)
 
     #RPC methods
     @rpc
@@ -23,11 +29,8 @@ class StorageService:
     @rpc
     def get(self, uuid):
 
-        #Config Search
-        storage_config = StorageConfig(self.LOCAL_STORAGE_LOCATION)
-
         #Reading file
-        file_bytes = StorageController(storage_config).get(uuid)
+        file_bytes = StorageController(self.storage_config).get(uuid)
         
         if file_bytes is not None:
             #Build object
@@ -43,9 +46,17 @@ class StorageService:
 
         f = File(json_file["content"])
         
-        #Config Search
-        storage_config = StorageConfig(self.LOCAL_STORAGE_LOCATION)
-
         #Save File
-        uuid_name = StorageController(storage_config).save(f.decode())
+        uuid_name = StorageController(self.storage_config).save(f.decode())
         return uuid_name
+
+    @rpc
+    def remove(self, uuid_name):
+
+        try:
+            StorageController(self.storage_config).remove(uuid_name)
+        except Exception as e:
+            error("[StorageService] Error: {0}".format(e))
+            return False
+
+        return True
