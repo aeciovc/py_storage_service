@@ -22,6 +22,13 @@ class TestRemove(unittest.TestCase):
     storage_config = StorageConfig("/home/user")
     storage_config_invalid = None
 
+    @patch('controller.StorageController.remove', return_value=True)
+    def test_remove_success(self, remove):
+
+        storage = StorageController(self.storage_config)
+
+        self.assertEqual(storage.remove(uuid.uuid4()), True)
+
     def test_remove_with_invalid_config(self):
 
         storage = StorageController(self.storage_config_invalid)

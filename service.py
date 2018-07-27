@@ -55,7 +55,7 @@ class StorageService:
 
         try:
             StorageController(self.storage_config).remove(uuid_name)
-        except InvalidConfigError as e:
+        except Exception as e:
             error("[StorageService] Error: "+ e.msg)
             return False
 
