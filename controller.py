@@ -52,15 +52,15 @@ class StorageController(object):
             raise InvalidParamError("This is not a UUID value")
 
         #Path
-        file_path = path.join(self.config.location, uuid_name)
+        file_path = path.join(self.config.location, str(uuid_name))
         info("[Storage] Removing file: "+file_path)
 
         #Removing File
         try:
             os.remove(file_path)
         except Exception as e:
-            error("[Storage] Error trying remove file"+ e.msg)
-            return False
+            error("[Storage] Error trying remove file {0}".format(e))
+            raise FileNotFoundError("File not found {0}".format(file_path))
 
         info("[Storage] Removed")
 

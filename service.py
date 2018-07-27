@@ -56,7 +56,7 @@ class StorageService:
         try:
             StorageController(self.storage_config).remove(uuid_name)
         except Exception as e:
-            error("[StorageService] Error: "+ e.msg)
+            error("[StorageService] Error: {0}".format(e))
             return False
 
         return True

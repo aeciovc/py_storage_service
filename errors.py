@@ -1,13 +1,20 @@
 class InvalidConfigError(Exception):
     
-    MESSAGE = "Invalid Config!"
+    msg = "Invalid Config!"
 
     def __init__(self):
-        super().__init__(self.MESSAGE)
+        super().__init__(self.msg)
 
 class InvalidParamError(Exception):
     
-    DEFAULT_MESSAGE = "Invalid Param: "
+    msg = "Invalid Param: "
 
     def __init__(self, message):
-        super().__init__(self.DEFAULT_MESSAGE + message)
+        super().__init__(self.msg + message)
+
+class FileNotFoundError(Exception):
+    
+    msg = "File Not Found: "
+
+    def __init__(self, message):
+        super().__init__(self.msg + message)

@@ -11,7 +11,7 @@ from errors import InvalidConfigError, InvalidParamError
 
 #Intern Modules
 from logger import default
-from logging import debug
+#from logging import debug
 
 class TestRemove(unittest.TestCase):
     """
@@ -44,7 +44,7 @@ class TestRemove(unittest.TestCase):
             with self.assertRaises(InvalidParamError):
                 storage.remove(1)
 
-        with self.subTest("with string"):
+        with self.subTest("with string not UUID"):
             with self.assertRaises(InvalidParamError):
                 storage.remove("fegwegweg")
         
@@ -52,12 +52,12 @@ class TestRemove(unittest.TestCase):
             with self.assertRaises(InvalidParamError):
                 storage.remove(None)
 
-    @patch('controller.StorageController.remove', return_value=False)
-    def test_remove_no_file_found(self, remove):
+    def test_remove_no_file_found(self):
 
         storage = StorageController(self.storage_config)
 
-        self.assertEqual(storage.remove(uuid.uuid4()), False)
+        with self.assertRaises(FileNotFoundError):
+            storage.remove(uuid.uuid4())
         
 if __name__ == '__main__':
     unittest.main()
