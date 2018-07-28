@@ -12,16 +12,20 @@ from errors import InvalidConfigError, InvalidParamError
 
 #Intern Modules
 from logger import default
-#from logging import debug
+from logging import info
 
 class TestRemove(unittest.TestCase):
     """
     Test remove function from the storage_file_system
     """
 
-    #Config
-    storage_config = StorageConfig("/home/user")
-    storage_config_invalid = None
+    def setUp(self):
+        self.storage_config = StorageConfig("/home/user")
+        self.storage_config_invalid = None
+
+    def tearDown(self):
+        self.storage_config = None
+        self.storage_config_invalid = None
 
     @patch('storage_file_system.FileSystemStorage.remove', return_value=True)
     def test_remove_success(self, remove):

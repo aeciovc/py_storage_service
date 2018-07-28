@@ -1,5 +1,9 @@
 start:
 	@nameko run --config nameko.yaml service;
 
-unit_test:
-	@python3 test_storage_file_system.py -v
+tests:
+	#@python3 storage_file_system_test.py -v
+	#@python3 storage_aws_test.py -v
+	#@python -m unittest storage_file_system_test
+	#@python -m unittest discover -s test
+	@python -m unittest test.test_storage_file_system
