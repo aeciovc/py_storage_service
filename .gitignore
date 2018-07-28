@@ -6,5 +6,8 @@ var
 info.log
 errors.log
 
+#Env
+.env
+
 #Caches
 __pycache__/
