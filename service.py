@@ -2,7 +2,7 @@ from nameko.rpc import rpc
 from decouple import config
 
 from models import StorageConfig, File
-from controller import StorageController
+from storage_file_system import FileSystemStorage
 from errors import InvalidConfigError
 
 import json
@@ -30,7 +30,7 @@ class StorageService:
     def get(self, uuid):
 
         #Reading file
-        file_bytes = StorageController(self.storage_config).get(uuid)
+        file_bytes = FileSystemStorage(self.storage_config).get(uuid)
         
         if file_bytes is not None:
             #Build object
@@ -47,14 +47,14 @@ class StorageService:
         f = File(json_file["content"])
         
         #Save File
-        uuid_name = StorageController(self.storage_config).save(f.decode())
+        uuid_name = FileSystemStorage(self.storage_config).save(f.decode())
         return uuid_name
 
     @rpc
     def remove(self, uuid_name):
 
         try:
-            StorageController(self.storage_config).remove(uuid_name)
+            FileSystemStorage(self.storage_config).remove(uuid_name)
         except Exception as e:
             error("[StorageService] Error: {0}".format(e))
             return False

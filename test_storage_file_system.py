@@ -5,7 +5,8 @@ from unittest.mock import patch
 
 import uuid
 
-from controller import StorageController
+from storage_file_system import FileSystemStorage
+
 from models import StorageConfig
 from errors import InvalidConfigError, InvalidParamError
 
@@ -15,30 +16,30 @@ from logger import default
 
 class TestRemove(unittest.TestCase):
     """
-    Test remove function from the controller
+    Test remove function from the storage_file_system
     """
 
     #Config
     storage_config = StorageConfig("/home/user")
     storage_config_invalid = None
 
-    @patch('controller.StorageController.remove', return_value=True)
+    @patch('storage_file_system.FileSystemStorage.remove', return_value=True)
     def test_remove_success(self, remove):
 
-        storage = StorageController(self.storage_config)
+        storage = FileSystemStorage(self.storage_config)
 
         self.assertEqual(storage.remove(uuid.uuid4()), True)
 
     def test_remove_with_invalid_config(self):
 
-        storage = StorageController(self.storage_config_invalid)
+        storage = FileSystemStorage(self.storage_config_invalid)
 
         with self.assertRaises(InvalidConfigError):
             storage.remove(uuid.uuid4())
         
     def test_remove_with_invalid_inputs(self):
         
-        storage = StorageController(self.storage_config)
+        storage = FileSystemStorage(self.storage_config)
 
         with self.subTest("with integer"):
             with self.assertRaises(InvalidParamError):
@@ -54,7 +55,7 @@ class TestRemove(unittest.TestCase):
 
     def test_remove_no_file_found(self):
 
-        storage = StorageController(self.storage_config)
+        storage = FileSystemStorage(self.storage_config)
 
         with self.assertRaises(FileNotFoundError):
             storage.remove(uuid.uuid4())

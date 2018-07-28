@@ -8,8 +8,11 @@ import os
 
 from errors import InvalidConfigError, InvalidParamError
 
-class StorageController(object):
-    
+class FileSystemStorage(object):
+    """
+    Standard filesystem storage
+    """
+
     def __init__(self, config):
         self.config = config
 
