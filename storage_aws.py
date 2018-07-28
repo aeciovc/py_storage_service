@@ -17,7 +17,11 @@ class AWSStorage(object):
         if self._is_valid_config():
             
             # Create an S3 client
-            self.s3 = boto3.resource('s3')
+            self.s3 = boto3.client(
+                    's3',
+                    aws_access_key_id = config.KEY,
+                    aws_secret_access_key = config.SECRET_KEY)
+
             self.bucket_name = config.BUCKET_NAME
 
     def get(self, uuid_name):
@@ -31,7 +35,6 @@ class AWSStorage(object):
         try:
             response = self.s3.Object(self.bucket_name, uuid_name)
             return response.get()['Body'].read()
-
         except ClientError as e:
             error("[StorageAWS] Error trying read file{0}".format(e))
             raise FileNotFoundError(uuid_name)
@@ -48,7 +51,7 @@ class AWSStorage(object):
         uuid_name = str(uuid.uuid4())
 
         #Save raw_file to AWS
-        self.s3.Bucket(self.bucket_name).put_object(Key=uuid_name, Body=raw_file)
+        self.s3.put_object(Bucket=self.bucket_name, Key=uuid_name, Body=raw_file)
 
         return uuid_name
 
@@ -62,13 +65,12 @@ class AWSStorage(object):
 
         #Delete from AWS
         try:
-            self.s3.Object(self.bucket_name, uuid_name).delete()
-        except Exception as e:
+            self.s3.delete_object(Bucket=self.bucket_name, Key=str(uuid_name))
+        except ClientError as e:
             error("[StorageAWS] Error trying read file{0}".format(e))
             return False
 
         return True
-
         
     def _is_valid_config(self):
         if self.config is None:

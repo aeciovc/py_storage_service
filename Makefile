@@ -6,4 +6,4 @@ tests:
 	#@python3 storage_aws_test.py -v
 	#@python -m unittest storage_file_system_test
 	#@python -m unittest discover -s test
-	@python -m unittest test.test_storage_file_system
+	@python -m unittest -v test.test_storage_aws
