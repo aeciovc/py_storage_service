@@ -39,6 +39,10 @@ class CreateAWSStorageInstanceTestCase(unittest.TestCase):
 
                 AWSStorage(config)
 
+        with self.subTest("with None config"):
+            with self.assertRaises(InvalidConfigError):
+                AWSStorage(None)
+
         with self.subTest("with valid config"):
 
             config = TestConfig()
@@ -173,22 +177,36 @@ class SaveTestCase(ConfigTest):
         mock_put_object.assert_called_with(message="Hello World!")
     """
 
-class RemoveTestCase(unittest.TestCase):
-    """
-    Test remove function from the storage_aws
-    """
+class RemoveWithInvalidParamsTestCase(unittest.TestCase):
 
-    """
-    def test_remove_success(self):
-        self.assertEqual(self.storage.remove('9135e7b9-a996-4c1d-9a3e-9ffb0277999d'), True)
+    def setUp(self):
 
-    def test_remove_with_invalid_config(self):
+        #Config
+        config = TestConfig()
+        config.BUCKET_NAME = confdecouple('BUCKET_NAME')
+        config.KEY = confdecouple('KEY')
+        config.SECRET_KEY = confdecouple('SECRET_KEY')
 
-        with self.assertRaises(InvalidConfigError):
-            self.storage_invalid_config.remove(uuid.uuid4())
+        #Mock
+        mock = MagicMock()
+        mock.delete_object(Bucket=config.BUCKET_NAME, Key='d20b1c38-2f5f-4b48-b604-eb90f82ff800')
+        mock.delete_object.side_effect = Exception()
+
+        config.S3 = mock
+
+        #Storage
+        self.storage = AWSStorage(config)
+        self.config = config
+
+    def tearDown(self):
+        self.storage = None
+
+    def test_with_invalid_uuid(self):
         
-    def test_remove_with_invalid_inputs(self):
-        
+        with self.subTest("with none"):
+            with self.assertRaises(InvalidParamError):
+                self.storage.remove(None)
+
         with self.subTest("with integer"):
             with self.assertRaises(InvalidParamError):
                 self.storage.remove(1)
@@ -196,15 +214,50 @@ class RemoveTestCase(unittest.TestCase):
         with self.subTest("with string not UUID"):
             with self.assertRaises(InvalidParamError):
                 self.storage.remove("fegwegweg")
-        
-        with self.subTest("with None"):
-            with self.assertRaises(InvalidParamError):
-                self.storage.remove(None)
 
-    def test_remove_no_file_found(self):
-        self.assertEqual(self.storage.remove(uuid.uuid4()), True) #It's a default behavior on AWS
+    def test_with_aws_error(self):
+
+        #Input
+        uuid_name = 'd20b1c38-2f5f-4b48-b604-eb90f82ff800'
+
+        #Validate AWS call
+        self.storage.config.S3.delete_object.assert_called_with(Bucket=self.config.BUCKET_NAME, Key=uuid_name)
+       
+        with self.assertRaises(AWSExceptionError):
+            self.storage.remove(uuid_name)
+
+class RemoveSuccessTestCase(unittest.TestCase):
+    def setUp(self):
+        
+        #Config
+        config = TestConfig()
+        config.BUCKET_NAME = confdecouple('BUCKET_NAME')
+        config.KEY = confdecouple('KEY')
+        config.SECRET_KEY = confdecouple('SECRET_KEY')
+
+        #Mock
+        mock = MagicMock()
+        mock.delete_object(Bucket=config.BUCKET_NAME, Key='d20b1c38-2f5f-4b48-b604-eb90f82ff800')
+
+        config.S3 = mock
+
+        #Storage
+        self.storage = AWSStorage(config)
+        self.config = config
     
-    """
+    def tearDown(self):
+        self.storage = None
+
+    def test_save_success(self):
+
+        uuid_name = 'd20b1c38-2f5f-4b48-b604-eb90f82ff800'
+
+        #Remove
+        result = self.storage.remove(uuid_name)
+
+        #Validate aws call and result
+        self.storage.config.S3.delete_object.assert_called_with(Bucket=self.config.BUCKET_NAME, Key=uuid_name)
+        self.assertTrue(result)
     
 if __name__ == '__main__':
     unittest.main()

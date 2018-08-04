@@ -1,16 +1,7 @@
 import boto3
 
-#Mock
-#from botocore.stub import Stubber
-
 class Config:
-    APP_NAME = 'Bliive Tel App'
-    S3_CLIENT = None
-
-    @classmethod
-    def init_connection(cls, config):
-        #connect(config.DATABASE_PROJECT, host=config.DATABASE_URI)
-        config.load()
+    APP_NAME = 'Python Storage Service'
 
 class DevelopmentConfig(Config):
     DEBUG = True

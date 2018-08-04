@@ -20,9 +20,6 @@ class AWSStorage(object):
 
     def get(self, uuid_name):
         
-        if not self._is_valid_config():
-            raise InvalidConfigError()
-
         if not self._is_valid_uuid(uuid_name):
             raise InvalidParamError("This is not a UUID value")
 
@@ -34,8 +31,6 @@ class AWSStorage(object):
             raise FileNotFoundError(uuid_name)
 
     def save(self, uuid_name, raw_file):
-        if not self._is_valid_config():
-            raise InvalidConfigError()
 
         if raw_file is None:
             raise InvalidParamError("This is not a data valid")
@@ -59,14 +54,13 @@ class AWSStorage(object):
         if not self._is_valid_uuid(uuid_name):
             raise InvalidParamError("This is not a UUID value")
 
-        #Delete from AWS
         try:
-            self.s3.delete_object(Bucket=self.bucket_name, Key=str(uuid_name))
-        except ClientError as e:
-            error("[StorageAWS] Error trying read file{0}".format(e))
-            return False
+            self.config.S3.delete_object(Bucket=self.config.BUCKET_NAME, Key=str(uuid_name))
+            return True
 
-        return True
+        except Exception as e:
+            error("[StorageAWS] Error trying remove file{0}".format(e))
+            raise AWSExceptionError("can't remove object {0}".format(e))
 
     #Generate id object
     def _get_new_uuid(self):
