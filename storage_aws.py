@@ -4,25 +4,19 @@ from uuid import UUID
 
 import uuid
 import boto3
+import botocore
 
 from botocore.exceptions import ClientError
 
-from errors import InvalidConfigError, InvalidParamError, FileNotFoundError
+from errors import InvalidConfigError, InvalidParamError, FileNotFoundError, AWSExceptionError
 
 class AWSStorage(object):
-    
+
     def __init__(self, config):
         self.config = config
 
-        if self._is_valid_config():
-            
-            # Create an S3 client
-            self.s3 = boto3.client(
-                    's3',
-                    aws_access_key_id = config.KEY,
-                    aws_secret_access_key = config.SECRET_KEY)
-
-            self.bucket_name = config.BUCKET_NAME
+        if not self._is_valid_config():
+            raise InvalidConfigError()
 
     def get(self, uuid_name):
         
@@ -39,21 +33,23 @@ class AWSStorage(object):
             error("[StorageAWS] Error trying read file{0}".format(e))
             raise FileNotFoundError(uuid_name)
 
-    def save(self, raw_file):
-
+    def save(self, uuid_name, raw_file):
         if not self._is_valid_config():
             raise InvalidConfigError()
 
         if raw_file is None:
             raise InvalidParamError("This is not a data valid")
 
-        #Generate id object
-        uuid_name = str(uuid.uuid4())
+        if not self._is_valid_uuid(uuid_name):
+            raise InvalidParamError("This is not a uuid valid")
 
-        #Save raw_file to AWS
-        self.s3.put_object(Bucket=self.bucket_name, Key=uuid_name, Body=raw_file)
-
-        return uuid_name
+        try:
+            self.config.S3.put_object(Bucket=self.config.BUCKET_NAME, Key=uuid_name, Body=raw_file)
+            return True
+        
+        except Exception as e:
+            error("[StorageAWS] Error trying save file{0}".format(e))
+            raise AWSExceptionError("can't save object ")
 
     def remove(self, uuid_name):
         
@@ -71,12 +67,19 @@ class AWSStorage(object):
             return False
 
         return True
+
+    #Generate id object
+    def _get_new_uuid(self):
+        uuid_name = str(uuid.uuid4())
+        return uuid_name
         
     def _is_valid_config(self):
         if self.config is None:
             return False
 
-        if not hasattr(self.config, 'BUCKET_NAME'):
+        if (not hasattr(self.config, 'BUCKET_NAME') or self.config.BUCKET_NAME == ''
+            or not  hasattr(self.config, 'KEY') or self.config.KEY == ''
+            or not  hasattr(self.config, 'SECRET_KEY') or self.config.SECRET_KEY == ''):
             return False
         else:
             return True

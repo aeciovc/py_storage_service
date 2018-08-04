@@ -1,44 +1,164 @@
 import unittest
-import unittest.mock
-import uuid
-import io
 import tempfile
 
+from mock.mock import MagicMock
 from unittest.mock import patch
 from decouple import config as confdecouple
+from logger import default
 
-#from storage import default_storage
 from storage_aws import AWSStorage
 from config import Config
-from errors import InvalidConfigError, InvalidParamError
+from errors import InvalidConfigError, InvalidParamError, AWSExceptionError
+from config import Config, TestConfig
 
-#Intern Modules
-#from logger import default
-#from logging import debug
+class CreateAWSStorageInstanceTestCase(unittest.TestCase):
 
-class ConfigTest(unittest.TestCase):
+    def test_create_instance_with_invalid_configs(self):
+
+        with self.subTest("with no bucket name"):
+            with self.assertRaises(InvalidConfigError):
+                config = TestConfig()
+                config.KEY = confdecouple('KEY')
+                config.SECRET_KEY = confdecouple('SECRET_KEY')        
+
+                AWSStorage(config)
+
+        with self.subTest("with no key"):
+            with self.assertRaises(InvalidConfigError):
+                config = TestConfig()
+                config.BUCKET_NAME = confdecouple('BUCKET_NAME')
+                config.SECRET_KEY = confdecouple('SECRET_KEY')
+
+                AWSStorage(config)
+
+        with self.subTest("with no secret key"):
+            with self.assertRaises(InvalidConfigError):
+                config = TestConfig()
+                config.BUCKET_NAME = confdecouple('BUCKET_NAME')
+                config.KEY = confdecouple('KEY')
+
+                AWSStorage(config)
+
+        with self.subTest("with valid config"):
+
+            config = TestConfig()
+            config.BUCKET_NAME = confdecouple('BUCKET_NAME')
+            config.KEY = confdecouple('KEY')
+            config.SECRET_KEY = confdecouple('SECRET_KEY')
+
+            storage = AWSStorage(config)
+
+            self.assertEqual(storage.config.BUCKET_NAME, confdecouple('BUCKET_NAME'))
+            self.assertEqual(storage.config.KEY, confdecouple('KEY'))
+            self.assertEqual(storage.config.SECRET_KEY, confdecouple('SECRET_KEY'))
+
+class SaveWithInvalidParamsTestCase(unittest.TestCase):
+
     def setUp(self):
-        
+
         #Config
-        config = Config()
+        config = TestConfig()
         config.BUCKET_NAME = confdecouple('BUCKET_NAME')
         config.KEY = confdecouple('KEY')
         config.SECRET_KEY = confdecouple('SECRET_KEY')
 
+        #Mock
+        mock = MagicMock()
+        mock.put_object(Bucket=config.BUCKET_NAME, Key='d20b1c38-2f5f-4b48-b604-eb90f82ff800', Body=b'It is a file!')
+        mock.put_object.side_effect = Exception()
+
+        #Temp File
+        self.file = tempfile.TemporaryFile(mode='w+b')
+        self.file.write(b'It is a file!')
+        self.file.seek(0)
+        self.raw_file = self.file.read()
+
+        config.S3 = mock
+
         #Storage
         self.storage = AWSStorage(config)
-        self.storage_invalid_config = AWSStorage(None)
+        self.config = config
 
     def tearDown(self):
         self.storage = None
-        self.storage_invalid_config = None
+        self.file.close()
 
-class SaveTestCase(ConfigTest):
-    """
-    Test save function to the storage_aws
-    """
+    def test_with_invalid_file(self):
+
+        #Input
+        uuid_name = 'd20b1c38-2f5f-4b48-b604-eb90f82ff800'
+
+        with self.assertRaises(InvalidParamError):
+            self.storage.save(uuid_name, None)
+
+    def test_with_invalid_uuid(self):
+        
+        #Input
+        body = self.raw_file
+
+        with self.assertRaises(InvalidParamError):
+            self.storage.save(None, body)
+
+    def test_with_aws_error(self):
+
+        #Input
+        uuid_name = 'd20b1c38-2f5f-4b48-b604-eb90f82ff800'
+        body = self.raw_file
+
+        #Validate AWS call
+        self.storage.config.S3.put_object.assert_called_with(Body=body, Bucket=self.config.BUCKET_NAME, Key=uuid_name)
+       
+        with self.assertRaises(AWSExceptionError):
+            self.storage.save(uuid_name, self.raw_file)
+
+class SaveSuccessTestCase(unittest.TestCase):
+    def setUp(self):
+        
+        #Temp File
+        self.file = tempfile.TemporaryFile(mode='w+b')
+        self.file.write(b'It is a file!')
+        self.file.seek(0)
+        self.raw_file = self.file.read()
+
+        #Config
+        config = TestConfig()
+        config.BUCKET_NAME = confdecouple('BUCKET_NAME')
+        config.KEY = confdecouple('KEY')
+        config.SECRET_KEY = confdecouple('SECRET_KEY')
+
+        #Mock
+        mock = MagicMock()
+        mock.put_object(Bucket=config.BUCKET_NAME, Key='d20b1c38-2f5f-4b48-b604-eb90f82ff800', Body=b'It is a file!')
+
+        config.S3 = mock
+
+        #Storage
+        self.storage = AWSStorage(config)
+        self.config = config
+    
+    def tearDown(self):
+        self.storage = None
+        self.file.close()
 
     def test_save_success(self):
+
+        uuid_name = 'd20b1c38-2f5f-4b48-b604-eb90f82ff800'
+        body = self.raw_file
+
+        #Save
+        result = self.storage.save(uuid_name, self.raw_file)
+
+        #Validate aws call and result
+        self.storage.config.S3.put_object.assert_called_with(Body=body, Bucket=self.config.BUCKET_NAME, Key=uuid_name)
+        self.assertTrue(result)
+
+    """
+class SaveTestCase(ConfigTest):
+    
+    Test save function to the storage_aws
+    
+    @patch('botocore.client', return_value=True)
+    def test_save_success(self, mock_put_object):
 
         #Temp File
         f = tempfile.TemporaryFile(mode='w+b')
@@ -49,11 +169,16 @@ class SaveTestCase(ConfigTest):
         id = self.storage.save(raw_file)
         print("ID generated: ", id)
 
-class RemoveTestCase(ConfigTest):
+        # verify
+        mock_put_object.assert_called_with(message="Hello World!")
+    """
+
+class RemoveTestCase(unittest.TestCase):
     """
     Test remove function from the storage_aws
     """
 
+    """
     def test_remove_success(self):
         self.assertEqual(self.storage.remove('9135e7b9-a996-4c1d-9a3e-9ffb0277999d'), True)
 
@@ -78,6 +203,8 @@ class RemoveTestCase(ConfigTest):
 
     def test_remove_no_file_found(self):
         self.assertEqual(self.storage.remove(uuid.uuid4()), True) #It's a default behavior on AWS
+    
+    """
     
 if __name__ == '__main__':
     unittest.main()
