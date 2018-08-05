@@ -21,6 +21,9 @@ class DevelopmentConfig(Config):
         #FileSystem Storage
         self.LOCAL_STORAGE_LOCATION = config('LOCAL_STORAGE_LOCATION')
 
+        #Use this class
+        self.STORAGE_CLASS = config('STORAGE_CLASS')
+
 class TestConfig(Config):
     DEBUG = True
     TESTING = True

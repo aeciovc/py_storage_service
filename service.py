@@ -8,15 +8,14 @@ from config import DevelopmentConfig
 from logger import default
 from logging import error
 
+from storage import default_storage, config
+
 import json
 
 class StorageService:
 
-    #Config Storage
-    storage_config = DevelopmentConfig()
-
     #Nameko Service
-    name = storage_config.NAME_SERVICE
+    name = config.NAME_SERVICE
 
     #RPC methods
     @rpc
@@ -27,7 +26,7 @@ class StorageService:
     def get(self, uuid):
 
         #Reading file
-        file_bytes = FileSystemStorage(self.storage_config).get(uuid)
+        file_bytes = default_storage.get(uuid)
         
         if file_bytes is not None:
             #Build object
@@ -44,14 +43,14 @@ class StorageService:
         f = File(json_file["content"])
         
         #Save File
-        uuid_name = FileSystemStorage(self.storage_config).save(f.decode())
+        uuid_name = default_storage.save(f.decode())
         return uuid_name
 
     @rpc
     def remove(self, uuid_name):
 
         try:
-            FileSystemStorage(self.storage_config).remove(uuid_name)
+            default_storage.remove(uuid_name)
         except Exception as e:
             error("[StorageService] Error: {0}".format(e))
             return False
