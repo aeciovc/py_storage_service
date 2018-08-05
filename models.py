@@ -1,11 +1,6 @@
 import base64
 import json
 
-class StorageConfig(object):
-    
-    def __init__(self, location):
-        self.location = location
-
 class File(object):
 
     def __init__(self, content):
