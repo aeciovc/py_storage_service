@@ -8,10 +8,16 @@ import os
 
 from errors import InvalidConfigError, InvalidParamError
 
-class StorageController(object):
-    
+class FileSystemStorage(object):
+    """
+    Standard filesystem storage
+    """
+
     def __init__(self, config):
         self.config = config
+
+        if not self._is_valid_config():
+            raise InvalidConfigError()
 
     def get(self, uuid):
         
@@ -27,7 +33,7 @@ class StorageController(object):
         uuid_name = str(uuid.uuid4())
 
         #Path
-        file_path = path.join(self.config.location, uuid_name)
+        file_path = path.join(self.config.LOCAL_STORAGE_LOCATION, uuid_name)
         info("[Storage] Saving file: "+file_path)
 
         #Saving File
@@ -52,7 +58,7 @@ class StorageController(object):
             raise InvalidParamError("This is not a UUID value")
 
         #Path
-        file_path = path.join(self.config.location, str(uuid_name))
+        file_path = path.join(self.config.LOCAL_STORAGE_LOCATION, str(uuid_name))
         info("[Storage] Removing file: "+file_path)
 
         #Removing File
@@ -72,7 +78,7 @@ class StorageController(object):
         if not uuid_name:
             return None
             
-        file_path = path.join(self.config.location, uuid_name)
+        file_path = path.join(self.config.LOCAL_STORAGE_LOCATION, uuid_name)
 
         if path.isfile(file_path):
             info("[Storage] Reading from: "+ file_path)
@@ -88,7 +94,7 @@ class StorageController(object):
             return None
 
     def _is_valid_config(self):
-        if not hasattr(self.config, 'location'):
+        if not hasattr(self.config, 'LOCAL_STORAGE_LOCATION') or self.config.LOCAL_STORAGE_LOCATION == '':
             return False
         else:
             return True
@@ -101,7 +107,7 @@ class StorageController(object):
             return False
 
     def _is_path_exists(self):
-        if os.path.isdir(self.config.location):
+        if os.path.isdir(self.config.LOCAL_STORAGE_LOCATION):
             return True
         else:
             return False
