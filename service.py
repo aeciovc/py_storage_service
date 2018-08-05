@@ -1,25 +1,22 @@
 from nameko.rpc import rpc
 from decouple import config
 
-from models import StorageConfig, File
+from models import File
 from storage_file_system import FileSystemStorage
 from errors import InvalidConfigError
+from config import DevelopmentConfig
+from logger import default
+from logging import error
 
 import json
 
-#Intern Modules
-from logger import default
-
-from logging import error
-
 class StorageService:
-    name = config('SERVICE_NAME')
-
-    #Configs
-    LOCAL_STORAGE_LOCATION = config('LOCAL_STORAGE_LOCATION')
 
     #Config Storage
-    storage_config = StorageConfig(LOCAL_STORAGE_LOCATION)
+    storage_config = DevelopmentConfig()
+
+    #Nameko Service
+    name = storage_config.NAME_SERVICE
 
     #RPC methods
     @rpc

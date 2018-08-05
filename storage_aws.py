@@ -2,12 +2,14 @@ from logging import info, error
 from os import path
 from uuid import UUID
 from botocore.exceptions import ClientError
+from errors import InvalidConfigError, InvalidParamError, FileNotFoundError, AWSExceptionError
 
 import uuid
 
-from errors import InvalidConfigError, InvalidParamError, FileNotFoundError, AWSExceptionError
-
 class AWSStorage(object):
+    """
+    AWS S3 storage
+    """
 
     def __init__(self, config):
         self.config = config
