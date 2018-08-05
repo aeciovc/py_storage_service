@@ -3,8 +3,6 @@ from os import path
 from uuid import UUID
 
 import uuid
-import boto3
-import botocore
 
 from botocore.exceptions import ClientError
 
@@ -24,11 +22,16 @@ class AWSStorage(object):
             raise InvalidParamError("This is not a UUID value")
 
         try:
-            response = self.s3.Object(self.bucket_name, uuid_name)
+            response = self.config.S3.get_object(Bucket=self.config.BUCKET_NAME, Key=uuid_name)
             return response.get()['Body'].read()
+        
         except ClientError as e:
-            error("[StorageAWS] Error trying read file{0}".format(e))
-            raise FileNotFoundError(uuid_name)
+            if e.response['Error']['Code'] == 'NoSuchKey':
+                error("[StorageAWS] Key not found {0}".format(e))
+                raise FileNotFoundError(uuid_name)
+            else:
+                error("[StorageAWS] Error trying read file{0}".format(e))
+                raise Exception()
 
     def save(self, uuid_name, raw_file):
 
@@ -62,7 +65,8 @@ class AWSStorage(object):
             error("[StorageAWS] Error trying remove file{0}".format(e))
             raise AWSExceptionError("can't remove object {0}".format(e))
 
-    #Generate id object
+    
+    #Private functions
     def _get_new_uuid(self):
         uuid_name = str(uuid.uuid4())
         return uuid_name

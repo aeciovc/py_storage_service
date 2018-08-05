@@ -8,8 +8,10 @@ from logger import default
 
 from storage_aws import AWSStorage
 from config import Config
-from errors import InvalidConfigError, InvalidParamError, AWSExceptionError
+from errors import InvalidConfigError, InvalidParamError, AWSExceptionError, FileNotFoundError
 from config import Config, TestConfig
+
+from botocore.exceptions import ClientError
 
 class CreateAWSStorageInstanceTestCase(unittest.TestCase):
 
@@ -156,27 +158,6 @@ class SaveSuccessTestCase(unittest.TestCase):
         self.storage.config.S3.put_object.assert_called_with(Body=body, Bucket=self.config.BUCKET_NAME, Key=uuid_name)
         self.assertTrue(result)
 
-    """
-class SaveTestCase(ConfigTest):
-    
-    Test save function to the storage_aws
-    
-    @patch('botocore.client', return_value=True)
-    def test_save_success(self, mock_put_object):
-
-        #Temp File
-        f = tempfile.TemporaryFile(mode='w+b')
-        f.write(b'It is a file!')
-        f.seek(0)
-        raw_file = f.read()
-
-        id = self.storage.save(raw_file)
-        print("ID generated: ", id)
-
-        # verify
-        mock_put_object.assert_called_with(message="Hello World!")
-    """
-
 class RemoveWithInvalidParamsTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -258,6 +239,58 @@ class RemoveSuccessTestCase(unittest.TestCase):
         #Validate aws call and result
         self.storage.config.S3.delete_object.assert_called_with(Bucket=self.config.BUCKET_NAME, Key=uuid_name)
         self.assertTrue(result)
+
+class GetWithInvalidParamsTestCase(unittest.TestCase):
+
+    def setUp(self):
+
+        #Config
+        config = TestConfig()
+        config.BUCKET_NAME = confdecouple('BUCKET_NAME')
+        config.KEY = confdecouple('KEY')
+        config.SECRET_KEY = confdecouple('SECRET_KEY')
+        
+        #NoSuchKey Error
+        error = {'Error': {'Code': 'NoSuchKey', 'Message': 'The specified key does not exist.', 'Key': 'd20b1c38-2f5f-4b48-b604-eb90f82ff800'}, 'ResponseMetadata': {'HTTPStatusCode': 404, 'RetryAttempts': 0}}
+
+        #Mock
+        mock = MagicMock()
+        mock.get_object(Bucket=config.BUCKET_NAME, Key='d20b1c38-2f5f-4b48-b604-eb90f82ff800')
+        mock.get_object.side_effect = ClientError(error, 'GetObject')
+
+        config.S3 = mock
+
+        #Storage
+        self.storage = AWSStorage(config)
+        self.config = config
+
+    def tearDown(self):
+        self.storage = None
+
+    def test_with_invalid_uuid(self):
+        
+        with self.subTest("with none"):
+            with self.assertRaises(InvalidParamError):
+                self.storage.get(None)
+
+        with self.subTest("with integer"):
+            with self.assertRaises(InvalidParamError):
+                self.storage.get(1)
+
+        with self.subTest("with string not UUID"):
+            with self.assertRaises(InvalidParamError):
+                self.storage.get("fegwegweg")
+
+    def test_with_aws_error(self):
+
+        #Input
+        uuid_name = 'd20b1c38-2f5f-4b48-b604-eb90f82ff800'
+
+        #Validate AWS call
+        self.storage.config.S3.get_object.assert_called_with(Bucket=self.config.BUCKET_NAME, Key=uuid_name)
+       
+        with self.assertRaises(FileNotFoundError):
+            self.storage.get(uuid_name)
     
 if __name__ == '__main__':
     unittest.main()
