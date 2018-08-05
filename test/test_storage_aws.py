@@ -1,9 +1,9 @@
 import unittest
 import tempfile
+import os
 
 from mock.mock import MagicMock
 from unittest.mock import patch
-from decouple import config as confdecouple
 from logger import default
 
 from storage_aws import AWSStorage
@@ -20,24 +20,21 @@ class CreateAWSStorageInstanceTestCase(unittest.TestCase):
         with self.subTest("with no bucket name"):
             with self.assertRaises(InvalidConfigError):
                 config = TestConfig()
-                config.KEY = confdecouple('KEY')
-                config.SECRET_KEY = confdecouple('SECRET_KEY')        
+                config.BUCKET_NAME = ''
 
                 AWSStorage(config)
 
         with self.subTest("with no key"):
             with self.assertRaises(InvalidConfigError):
                 config = TestConfig()
-                config.BUCKET_NAME = confdecouple('BUCKET_NAME')
-                config.SECRET_KEY = confdecouple('SECRET_KEY')
+                config.KEY = ''
 
                 AWSStorage(config)
 
         with self.subTest("with no secret key"):
             with self.assertRaises(InvalidConfigError):
                 config = TestConfig()
-                config.BUCKET_NAME = confdecouple('BUCKET_NAME')
-                config.KEY = confdecouple('KEY')
+                config.SECRET_KEY = ''
 
                 AWSStorage(config)
 
@@ -48,15 +45,15 @@ class CreateAWSStorageInstanceTestCase(unittest.TestCase):
         with self.subTest("with valid config"):
 
             config = TestConfig()
-            config.BUCKET_NAME = confdecouple('BUCKET_NAME')
-            config.KEY = confdecouple('KEY')
-            config.SECRET_KEY = confdecouple('SECRET_KEY')
 
             storage = AWSStorage(config)
 
-            self.assertEqual(storage.config.BUCKET_NAME, confdecouple('BUCKET_NAME'))
-            self.assertEqual(storage.config.KEY, confdecouple('KEY'))
-            self.assertEqual(storage.config.SECRET_KEY, confdecouple('SECRET_KEY'))
+            from decouple import config
+            BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '/test')
+
+            self.assertEqual(storage.config.BUCKET_NAME, config('BUCKET_NAME'))
+            self.assertEqual(storage.config.KEY, config('KEY'))
+            self.assertEqual(storage.config.SECRET_KEY, config('SECRET_KEY'))
 
 class SaveWithInvalidParamsTestCase(unittest.TestCase):
 
@@ -64,9 +61,6 @@ class SaveWithInvalidParamsTestCase(unittest.TestCase):
 
         #Config
         config = TestConfig()
-        config.BUCKET_NAME = confdecouple('BUCKET_NAME')
-        config.KEY = confdecouple('KEY')
-        config.SECRET_KEY = confdecouple('SECRET_KEY')
 
         #Mock
         mock = MagicMock()
@@ -128,9 +122,6 @@ class SaveSuccessTestCase(unittest.TestCase):
 
         #Config
         config = TestConfig()
-        config.BUCKET_NAME = confdecouple('BUCKET_NAME')
-        config.KEY = confdecouple('KEY')
-        config.SECRET_KEY = confdecouple('SECRET_KEY')
 
         #Mock
         mock = MagicMock()
@@ -164,9 +155,6 @@ class RemoveWithInvalidParamsTestCase(unittest.TestCase):
 
         #Config
         config = TestConfig()
-        config.BUCKET_NAME = confdecouple('BUCKET_NAME')
-        config.KEY = confdecouple('KEY')
-        config.SECRET_KEY = confdecouple('SECRET_KEY')
 
         #Mock
         mock = MagicMock()
@@ -212,9 +200,6 @@ class RemoveSuccessTestCase(unittest.TestCase):
         
         #Config
         config = TestConfig()
-        config.BUCKET_NAME = confdecouple('BUCKET_NAME')
-        config.KEY = confdecouple('KEY')
-        config.SECRET_KEY = confdecouple('SECRET_KEY')
 
         #Mock
         mock = MagicMock()
@@ -246,9 +231,6 @@ class GetWithInvalidParamsTestCase(unittest.TestCase):
 
         #Config
         config = TestConfig()
-        config.BUCKET_NAME = confdecouple('BUCKET_NAME')
-        config.KEY = confdecouple('KEY')
-        config.SECRET_KEY = confdecouple('SECRET_KEY')
         
         #NoSuchKey Error
         error = {'Error': {'Code': 'NoSuchKey', 'Message': 'The specified key does not exist.', 'Key': 'd20b1c38-2f5f-4b48-b604-eb90f82ff800'}, 'ResponseMetadata': {'HTTPStatusCode': 404, 'RetryAttempts': 0}}

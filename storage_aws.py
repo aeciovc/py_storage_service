@@ -1,10 +1,9 @@
 from logging import info, error
 from os import path
 from uuid import UUID
+from botocore.exceptions import ClientError
 
 import uuid
-
-from botocore.exceptions import ClientError
 
 from errors import InvalidConfigError, InvalidParamError, FileNotFoundError, AWSExceptionError
 
