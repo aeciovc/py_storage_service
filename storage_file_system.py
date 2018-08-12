@@ -27,13 +27,16 @@ class FileSystemStorage(object):
         else:
             return {}
 
-    def save(self, raw_file):
+    def save(self, uuid_name, raw_file):
 
-        #Generate id object
-        uuid_name = str(uuid.uuid4())
+        if not self._is_valid_uuid(uuid_name):
+            raise InvalidParamError("This is not a uuid valid")
+
+        if raw_file is None:
+            raise InvalidParamError("Invalid file")
 
         #Path
-        file_path = path.join(self.config.LOCAL_STORAGE_LOCATION, uuid_name)
+        file_path = path.join(self.config.LOCAL_STORAGE_LOCATION, str(uuid_name))
         info("[Storage] Saving file: "+file_path)
 
         #Saving File
@@ -43,16 +46,13 @@ class FileSystemStorage(object):
             f.close()
         except Exception as e:
             error("[Storage] Error trying read file"+ e.msg)
-            return None
+            return False
 
         info("[Storage] Saved")
 
-        return uuid_name
+        return True
 
     def remove(self, uuid_name):
-
-        if not self._is_valid_config():
-            raise InvalidConfigError()
 
         if not self._is_valid_uuid(uuid_name):
             raise InvalidParamError("This is not a UUID value")
@@ -94,7 +94,7 @@ class FileSystemStorage(object):
             return None
 
     def _is_valid_config(self):
-        if self.config is None or not hasattr(self.config, 'LOCAL_STORAGE_LOCATION') or self.config.LOCAL_STORAGE_LOCATION == '' or self.is_relative_path():
+        if self.config is None or not hasattr(self.config, 'LOCAL_STORAGE_LOCATION') or self.config.LOCAL_STORAGE_LOCATION == '' or self._is_relative_path():
             return False
         else:
             return True
@@ -112,11 +112,11 @@ class FileSystemStorage(object):
         else:
             return False
 
-    def is_safe_path(self, path, follow_symlinks=True):
+    def _is_safe_path(self, path, follow_symlinks=True):
         if follow_symlinks:
             return os.path.realpath(path).startswith(self.config.LOCAL_STORAGE_LOCATION)
 
         return os.path.abspath(path).startswith(self.config.LOCAL_STORAGE_LOCATION)
 
-    def is_relative_path(self):
+    def _is_relative_path(self):
         return not os.path.isabs(self.config.LOCAL_STORAGE_LOCATION)

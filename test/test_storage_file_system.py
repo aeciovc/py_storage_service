@@ -2,6 +2,7 @@ import unittest
 import unittest.mock
 import uuid
 import os
+import tempfile
 
 from os import path
 from unittest.mock import patch
@@ -9,7 +10,7 @@ from unittest.mock import patch
 from config import TestConfig
 from storage_file_system import FileSystemStorage
 from errors import InvalidConfigError, InvalidParamError
-from logger import default
+from logger import logger
 
 class CreateFileSystemStorageInstanceTestCase(unittest.TestCase):
 
@@ -44,7 +45,7 @@ class CreateFileSystemStorageInstanceTestCase(unittest.TestCase):
 
             self.assertEqual(storage.config.LOCAL_STORAGE_LOCATION, config('LOCAL_STORAGE_LOCATION'))
 
-class TestRemove(unittest.TestCase):
+class RemoveTestCase(unittest.TestCase):
     """
     Test remove function from the storage_file_system
     """
@@ -100,6 +101,71 @@ class TestRemove(unittest.TestCase):
 
         with self.assertRaises(FileNotFoundError):
             self.storage.remove(uuid.uuid4())
+
+class SaveTestCase(unittest.TestCase):
+    """
+    Test save function from the storage_file_system
+    """
+
+    def setUp(self):
+        #Config
+        self.config = TestConfig()
+
+        #Storage
+        self.storage = FileSystemStorage(self.config)
+
+        #Temp File
+        self.file = tempfile.TemporaryFile(mode='w+b')
+        self.file.write(b'It is a file!')
+        self.file.seek(0)
+        self.raw_file = self.file.read()
+
+    def tearDown(self):
+        self.config = None
+
+    @patch("io.open")
+    def test_save_success(self, open):
+
+        uuid_name = uuid.uuid4()
+
+        #Assert return
+        self.assertEqual(self.storage.save(uuid_name, self.file), True)
+
+        #Assert save called
+        param_called = path.join(self.config.LOCAL_STORAGE_LOCATION, str(uuid_name))
+        open.assert_called_with(param_called, 'wb')
+
+        
+    @patch("io.open")
+    def test_save_with_invalid_inputs(self, open):
+        
+        with self.subTest("with integer"):
+            with self.assertRaises(InvalidParamError):
+                self.storage.save(1, self.file)
+                
+                #Assert open not called
+                open.assert_not_called()
+
+        with self.subTest("with string not UUID"):
+            with self.assertRaises(InvalidParamError):
+                self.storage.save("fegwegweg", self.file)
+
+                #Assert open not called
+                open.assert_not_called()
+        
+        with self.subTest("with None"):
+            with self.assertRaises(InvalidParamError):
+                self.storage.save(None, self.file)
+
+                #Assert open not called
+                open.assert_not_called()
+
+        with self.subTest("with invalid file"):
+            with self.assertRaises(InvalidParamError):
+                self.storage.save(uuid.uuid4(), None)
+
+                #Assert open not called
+                open.assert_not_called()
         
 if __name__ == '__main__':
     unittest.main()

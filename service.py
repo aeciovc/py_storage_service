@@ -2,6 +2,7 @@ from nameko.rpc import rpc
 from decouple import config
 from logger import logger
 from logging import error
+import uuid
 
 from models import File
 from storage_file_system import FileSystemStorage
@@ -38,10 +39,14 @@ class StorageService:
 
         json_file = json.loads(file)
 
+        #Get content
         f = File(json_file["content"])
+
+        #Generate id object
+        uuid_name = str(uuid.uuid4())
         
         #Save File
-        uuid_name = default_storage.save(f.decode())
+        default_storage.save(f.decode())
         return uuid_name
 
     @rpc
