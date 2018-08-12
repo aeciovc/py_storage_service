@@ -5,11 +5,11 @@ import os
 import tempfile
 
 from os import path
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from config import TestConfig
 from storage_file_system import FileSystemStorage
-from errors import InvalidConfigError, InvalidParamError
+from errors import InvalidConfigError, InvalidParamError, FileNotFoundError
 from logger import logger
 
 class CreateFileSystemStorageInstanceTestCase(unittest.TestCase):
@@ -97,10 +97,19 @@ class RemoveTestCase(unittest.TestCase):
                 #Assert remove not called
                 remove.assert_not_called()
 
-    def test_remove_no_file_found(self):
+    @patch("os.remove")
+    def test_remove_no_file_found(self, remove):
+
+        uuid_name = uuid.uuid4()
+
+        remove.side_effect = OSError()
 
         with self.assertRaises(FileNotFoundError):
-            self.storage.remove(uuid.uuid4())
+            self.storage.remove(uuid_name)
+
+        #Assert remove called
+        param_called = path.join(self.config.LOCAL_STORAGE_LOCATION, str(uuid_name))
+        remove.assert_called_with(param_called)
 
 class SaveTestCase(unittest.TestCase):
     """
@@ -166,6 +175,79 @@ class SaveTestCase(unittest.TestCase):
 
                 #Assert open not called
                 open.assert_not_called()
+
+class GetTestCase(unittest.TestCase):
+    """
+    Test get function from the storage_file_system
+    """
+
+    def setUp(self):
+        #Config
+        self.config = TestConfig()
+
+        #Storage
+        self.storage = FileSystemStorage(self.config)
+
+        #Temp File
+        self.file = tempfile.TemporaryFile(mode='w+b')
+        self.file.write(b'It is a file!')
+        self.file.seek(0)
+        self.raw_file = self.file.read()
+
+    def tearDown(self):
+        self.config = None
+
+    @patch.object(FileSystemStorage, '_read', autospec=True)
+    def test_get_success(self, read):
         
+        uuid_name = uuid.uuid4()
+
+        #Mock result
+        read.return_value=self.raw_file
+
+        #Assert return
+        self.assertEqual(self.storage.get(uuid_name), self.raw_file)
+
+        #Assert read called
+        read.assert_called_with(self.storage, uuid_name)
+        
+    @patch.object(FileSystemStorage, '_read', autospec=True)
+    def test_get_with_invalid_inputs(self, read):
+        
+        with self.subTest("with integer"):
+            with self.assertRaises(InvalidParamError):
+                self.storage.get(1)
+                
+                #Assert open not called
+                read.assert_not_called()
+
+        with self.subTest("with string not UUID"):
+            with self.assertRaises(InvalidParamError):
+                self.storage.get("sdgsdg")
+
+                #Assert open not called
+                read.assert_not_called()
+        
+        with self.subTest("with None"):
+            with self.assertRaises(InvalidParamError):
+                self.storage.get(None)
+
+                #Assert open not called
+                read.assert_not_called()
+
+    @patch.object(FileSystemStorage, '_read', autospec=True)
+    def test_get_no_file_found(self, read):
+
+        uuid_name = uuid.uuid4()
+
+        #Mock result
+        read.return_value = None
+
+        with self.assertRaises(FileNotFoundError):
+            self.storage.get(uuid_name)
+
+        #Assert read called
+        read.assert_called_with(self.storage, uuid_name)
+
 if __name__ == '__main__':
     unittest.main()

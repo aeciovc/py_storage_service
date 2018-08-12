@@ -6,7 +6,7 @@ import uuid
 import io
 import os
 
-from errors import InvalidConfigError, InvalidParamError
+from errors import InvalidConfigError, InvalidParamError, FileNotFoundError
 
 class FileSystemStorage(object):
     """
@@ -19,13 +19,17 @@ class FileSystemStorage(object):
         if not self._is_valid_config():
             raise InvalidConfigError()
 
-    def get(self, uuid):
+    def get(self, uuid_name):
         
-        if uuid:
-            obj = self._read(uuid)
-            return obj
-        else:
-            return {}
+        if not self._is_valid_uuid(uuid_name):
+            raise InvalidParamError("This is not a UUID value")
+
+        obj = self._read(uuid_name)
+
+        if obj is None:
+            raise FileNotFoundError("{0}".format(uuid_name))
+        
+        return obj
 
     def save(self, uuid_name, raw_file):
 
@@ -64,9 +68,12 @@ class FileSystemStorage(object):
         #Removing File
         try:
             os.remove(file_path)
+        except OSError as e:
+            error("[Storage] Error trying remove file {0}".format(e))
+            raise FileNotFoundError("{0}".format(file_path))
         except Exception as e:
             error("[Storage] Error trying remove file {0}".format(e))
-            raise FileNotFoundError("File not found {0}".format(file_path))
+            raise Exception("Unknown error {0}".format(file_path))
 
         info("[Storage] Removed")
 
