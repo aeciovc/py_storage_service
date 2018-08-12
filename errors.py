@@ -25,3 +25,10 @@ class AWSExceptionError(Exception):
 
     def __init__(self, message):
         super().__init__(self.msg + message)
+
+class FileSystemExceptionError(Exception):
+    
+    msg = "Problem trying perform operation "
+
+    def __init__(self, message):
+        super().__init__(self.msg + message)

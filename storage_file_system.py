@@ -6,7 +6,7 @@ import uuid
 import io
 import os
 
-from errors import InvalidConfigError, InvalidParamError, FileNotFoundError
+from errors import InvalidConfigError, InvalidParamError, FileNotFoundError, FileSystemExceptionError
 
 class FileSystemStorage(object):
     """
@@ -49,7 +49,7 @@ class FileSystemStorage(object):
             f.write(raw_file)
             f.close()
         except Exception as e:
-            error("[Storage] Error trying read file"+ e.msg)
+            error("[Storage] Error trying read file {0}".format(e))
             return False
 
         info("[Storage] Saved")
@@ -85,20 +85,20 @@ class FileSystemStorage(object):
         if not uuid_name:
             return None
             
-        file_path = path.join(self.config.LOCAL_STORAGE_LOCATION, uuid_name)
+        file_path = path.join(self.config.LOCAL_STORAGE_LOCATION, str(uuid_name))
 
         if path.isfile(file_path):
             info("[Storage] Reading from: "+ file_path)
-            
+
             try:
-                f = io.open(file_path, 'rb').read()
-                return f
+                f = io.open(file_path, 'rb')
+                return f.read()
             except Exception as e:
-                error("[Storage] Error trying read file"+ e.msg)
-                return None
+                error("[Storage] Error trying read file {0}".format(e))
+                raise FileSystemExceptionError(" Error trying read file {0}".format(file_path))
         else:
-            error("[Storage] File not found: "+ file_path)
-            return None
+            error("[Storage] File not found {0}".format(file_path))
+            raise FileNotFoundError("{0}".format(file_path))
 
     def _is_valid_config(self):
         if self.config is None or not hasattr(self.config, 'LOCAL_STORAGE_LOCATION') or self.config.LOCAL_STORAGE_LOCATION == '' or self._is_relative_path():

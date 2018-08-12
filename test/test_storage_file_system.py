@@ -3,13 +3,14 @@ import unittest.mock
 import uuid
 import os
 import tempfile
+import io
 
 from os import path
-from unittest.mock import patch, Mock
+from unittest.mock import patch, mock_open, MagicMock
 
 from config import TestConfig
 from storage_file_system import FileSystemStorage
-from errors import InvalidConfigError, InvalidParamError, FileNotFoundError
+from errors import InvalidConfigError, InvalidParamError, FileNotFoundError, FileSystemExceptionError
 from logger import logger
 
 class CreateFileSystemStorageInstanceTestCase(unittest.TestCase):
@@ -262,6 +263,69 @@ class GetTestCase(unittest.TestCase):
 
         #Assert read called
         read.assert_called_with(self.storage, uuid_name)
+
+class _ReadTestCase(unittest.TestCase):
+    """
+    Test _read function from the storage_file_system
+    """
+
+    def setUp(self):
+        #Config
+        self.config = TestConfig()
+
+        #Storage
+        self.storage = FileSystemStorage(self.config)
+
+        #Temp File
+        self.file = tempfile.TemporaryFile(mode='w+b')
+        self.file.write(b'It is a file!')
+        self.file.seek(0)
+        self.raw_file = self.file.read()
+
+    def tearDown(self):
+        self.config = None
+
+    @patch('os.path.isfile', return_value=True)
+    @patch('io.open') 
+    def test__read_success(self, open, isfile):
+
+        uuid_name = uuid.uuid4()
+
+        self.storage._read(uuid_name)
+        
+        #Assert return
+        #self.assertEqual(self.storage._read(uuid_name), self.raw_file) It doesn't work
+
+        #Assert read called
+        param_called = path.join(self.config.LOCAL_STORAGE_LOCATION, str(uuid_name))
+        open.assert_called_with(param_called, 'rb')
+
+    @patch('os.path.isfile', return_value=False)
+    @patch('io.open') 
+    def test__read_file_not_found(self, open, isfile):
+
+        uuid_name = uuid.uuid4()
+
+        with self.assertRaises(FileNotFoundError):
+            self.storage._read(uuid_name)
+        
+        #Assert read not called
+        open.assert_not_called()
+
+    @patch('os.path.isfile', return_value=True)
+    @patch('io.open') 
+    def test__read_unknown_error(self, open, isfile):
+
+        open.side_effect = Exception()
+
+        uuid_name = uuid.uuid4()
+
+        with self.assertRaises(FileSystemExceptionError):
+            self.storage._read(uuid_name)
+        
+        #Assert read called
+        param_called = path.join(self.config.LOCAL_STORAGE_LOCATION, str(uuid_name))
+        open.assert_called_with(param_called, 'rb')
 
 if __name__ == '__main__':
     unittest.main()
