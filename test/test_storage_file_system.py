@@ -111,6 +111,20 @@ class RemoveTestCase(unittest.TestCase):
         param_called = path.join(self.config.LOCAL_STORAGE_LOCATION, str(uuid_name))
         remove.assert_called_with(param_called)
 
+    @patch("os.remove")
+    def test_remove_unknown_error(self, remove):
+
+        uuid_name = uuid.uuid4()
+
+        remove.side_effect = Exception()
+
+        with self.assertRaises(Exception):
+            self.storage.remove(uuid_name)
+
+        #Assert remove called
+        param_called = path.join(self.config.LOCAL_STORAGE_LOCATION, str(uuid_name))
+        remove.assert_called_with(param_called)
+
 class SaveTestCase(unittest.TestCase):
     """
     Test save function from the storage_file_system
