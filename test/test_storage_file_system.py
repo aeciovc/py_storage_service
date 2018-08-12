@@ -1,13 +1,48 @@
 import unittest
 import unittest.mock
 import uuid
+import os
 
+from os import path
 from unittest.mock import patch
 
+from config import TestConfig
 from storage_file_system import FileSystemStorage
-from models import StorageConfig
 from errors import InvalidConfigError, InvalidParamError
 from logger import default
+
+class CreateFileSystemStorageInstanceTestCase(unittest.TestCase):
+
+    def test_create_instance_with_invalid_configs(self):
+
+        with self.subTest("with no local storage"):
+            with self.assertRaises(InvalidConfigError):
+                config = TestConfig()
+                config.LOCAL_STORAGE_LOCATION = ''
+
+                FileSystemStorage(config)
+
+        with self.subTest("with a relative path"):
+            with self.assertRaises(InvalidConfigError):
+                config = TestConfig()
+                config.LOCAL_STORAGE_LOCATION = '../../etc'
+
+                FileSystemStorage(config)
+
+        with self.subTest("with None config"):
+            with self.assertRaises(InvalidConfigError):
+                FileSystemStorage(None)
+
+        with self.subTest("with valid config"):
+
+            config = TestConfig()
+
+            storage = FileSystemStorage(config)
+
+            from decouple import config
+            BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '/test')
+
+            self.assertEqual(storage.config.LOCAL_STORAGE_LOCATION, config('LOCAL_STORAGE_LOCATION'))
 
 class TestRemove(unittest.TestCase):
     """
@@ -15,53 +50,56 @@ class TestRemove(unittest.TestCase):
     """
 
     def setUp(self):
-        self.storage_config = StorageConfig("/home/user")
-        self.storage_config_invalid = None
+        #Config
+        self.config = TestConfig()
+
+        #Storage
+        self.storage = FileSystemStorage(self.config)
 
     def tearDown(self):
-        self.storage_config = None
-        self.storage_config_invalid = None
+        self.config = None
 
-    @patch('storage_file_system.FileSystemStorage.remove', return_value=True)
-    #@patch("os.remove") fazer dessa forma e mocar apenas a chamada do SO
+    @patch("os.remove")
     def test_remove_success(self, remove):
 
-        storage = FileSystemStorage(self.storage_config)
+        uuid_name = uuid.uuid4()
 
-        self.assertEqual(storage.remove(uuid.uuid4()), True)
+        #Assert return
+        self.assertEqual(self.storage.remove(uuid_name), True)
 
-        #os_mock.write.assert_called_once_with("some debug message here") garanta que o SO foi chamada uma vez
-        #exit_mock.assert_not_called() caso exista outra função que nesse teste não deveria ter sido chamada
+        #Assert remove called
+        param_called = path.join(self.config.LOCAL_STORAGE_LOCATION, str(uuid_name))
+        remove.assert_called_with(param_called)
 
-    def test_remove_with_invalid_config(self):
-
-        storage = FileSystemStorage(self.storage_config_invalid)
-
-        with self.assertRaises(InvalidConfigError):
-            storage.remove(uuid.uuid4())
         
-    def test_remove_with_invalid_inputs(self):
+    @patch("os.remove")
+    def test_remove_with_invalid_inputs(self, remove):
         
-        storage = FileSystemStorage(self.storage_config)
-
         with self.subTest("with integer"):
             with self.assertRaises(InvalidParamError):
-                storage.remove(1)
+                self.storage.remove(1)
+                
+                #Assert remove not called
+                remove.assert_not_called()
 
         with self.subTest("with string not UUID"):
             with self.assertRaises(InvalidParamError):
-                storage.remove("fegwegweg")
+                self.storage.remove("fegwegweg")
+
+                #Assert remove not called
+                remove.assert_not_called()
         
         with self.subTest("with None"):
             with self.assertRaises(InvalidParamError):
-                storage.remove(None)
+                self.storage.remove(None)
+
+                #Assert remove not called
+                remove.assert_not_called()
 
     def test_remove_no_file_found(self):
 
-        storage = FileSystemStorage(self.storage_config)
-
         with self.assertRaises(FileNotFoundError):
-            storage.remove(uuid.uuid4())
+            self.storage.remove(uuid.uuid4())
         
 if __name__ == '__main__':
     unittest.main()

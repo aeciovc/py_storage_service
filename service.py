@@ -1,13 +1,11 @@
 from nameko.rpc import rpc
 from decouple import config
+from logger import logger
+from logging import error
 
 from models import File
 from storage_file_system import FileSystemStorage
 from errors import InvalidConfigError
-from config import DevelopmentConfig
-from logger import default
-from logging import error
-
 from storage import default_storage, config
 
 import json

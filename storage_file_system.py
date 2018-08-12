@@ -94,7 +94,7 @@ class FileSystemStorage(object):
             return None
 
     def _is_valid_config(self):
-        if not hasattr(self.config, 'LOCAL_STORAGE_LOCATION') or self.config.LOCAL_STORAGE_LOCATION == '':
+        if self.config is None or not hasattr(self.config, 'LOCAL_STORAGE_LOCATION') or self.config.LOCAL_STORAGE_LOCATION == '' or self.is_relative_path():
             return False
         else:
             return True
@@ -111,3 +111,12 @@ class FileSystemStorage(object):
             return True
         else:
             return False
+
+    def is_safe_path(self, path, follow_symlinks=True):
+        if follow_symlinks:
+            return os.path.realpath(path).startswith(self.config.LOCAL_STORAGE_LOCATION)
+
+        return os.path.abspath(path).startswith(self.config.LOCAL_STORAGE_LOCATION)
+
+    def is_relative_path(self):
+        return not os.path.isabs(self.config.LOCAL_STORAGE_LOCATION)
